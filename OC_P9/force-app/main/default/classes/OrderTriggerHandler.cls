@@ -1,40 +1,139 @@
 public class OrderTriggerHandler extends TriggerHandler {
 
-// Maps and list initialized from the Trigger context
-private Map<Id,Order> oldMap;
-private Map<Id,Order> newMap;
-private List<Order> oldList;
-private List<Order> newList;
+    // Maps and list initialized from the Trigger context
+    private Map<Id,Order> oldMap;
+    private Map<Id,Order> newMap;
+    private List<Order> oldList;
+    private List<Order> newList;
 
-public override void startTrigger() {
-     if(newList != null){
-        for (Order newOrder : newList){
-            Order oldOrder = (this.oldMap != null) ? oldMap.get(newOrder.Id) : null;
-            // Insert or Update ?
-            if (oldOrder == null){
+    // CONSTANTS
+    private static final String ORDERED = 'Ordered';
 
-            }else{
+    // beforeInsert  / beforeUpdate
+    private static List<Order> ordersWithAmount = new List<Order>();
+    // afterInsert  / afterUpdate
+    private static List<Order> ordersOrdered = new List<Order>();
 
-            }
-     }
-}
+    // Accounts to Update
+    private static List<Account> accountsToUpdate = new List<Account>();
 
 
-
-
-
-
-
-    // Calcul montant
-	Order newOrder= trigger.new[0];
-	newOrder.NetAmount__c = newOrder.TotalAmount - newOrder.ShipmentCost__c;
-    
-    // UpdateAccountCA
-    set<Id> setAccountIds = new set<Id>();  
-    for(integer i=0; i< trigger.new.size(); i++){
-        Order newOrder= trigger.new[i];
-       
-        Account acc = [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id =:newOrder.AccountId ];
-        acc.Chiffre_d_affaire__c = acc.Chiffre_d_affaire__c + newOrder.TotalAmount;
-        update acc;
+    // Constructor
+    public TH_LOC_LocationTriggerHandler() {
+        this.oldMap = (Map<Id, Order>) Trigger.oldMap;
+        this.newMap = (Map<Id, Order>) Trigger.newMap;
+        this.oldList = (List<Order>) Trigger.Old;
+        this.newList = (List<Order>) Trigger.New;
     }
+
+    public override void startTrigger() {
+        // Clear lists
+        ordersOrdered.clear();
+        ordersWithAmount.clear();
+        accountsToUpdate.clear();
+
+        // Check this is not Delete event
+        if(newList != null){
+            //  Loop through and add to lists depending on conditions
+            for (Order newOrder : newList){
+                Order oldOrder = (this.oldMap != null) ? oldMap.get(newOrder.Id) : null;
+                // Insert or Update ?
+                if (oldOrder == null){
+                    // If inserting an Ordered order, add to list
+                    if(newOrder.Status == ORDERED){
+                        ordersOrdered.add(newOrder);
+                    }
+                    // If inserting an order with an amount , calculate Net Amount
+                    if(newOrder.TotalAmount != null){
+                        ordersWithAmount.add(newOrder);
+                    }
+                }else{
+                    // If status changed to ordered, update CA
+                    if(oldOrder.Status != newOrder.Status && newOrder.Status == ORDERED){
+                        ordersOrdered.add(newOrder);
+                    }
+                    // If amount changed, update netAmount
+                    if(oldOrder.TotalAmount != newOrder.TotalAmount){
+                        ordersWithAmount.add(newOrder);
+                    }
+                }
+            }
+        }
+    }
+
+
+    /*
+    Handle "Order before Insert"
+    */
+    public override void beforeInsert() {
+        System.debug(
+        '## >>> Order before Insert:START <<< run by ' + UserInfo.getName()
+        );
+        if(!ordersOrdered.isEmpty){
+            OrderTriggerHelper.updateNetAmount(ordersWithAmount);
+        }
+
+        System.debug('## >>> Order before Insert:END <<<');
+    }
+
+    
+    /*
+    Handle "Order before Update"
+    */
+    public override void beforeUpdate() {
+        System.debug(
+        '## >>> Order before Update:START <<< run by ' + UserInfo.getName()
+        );
+
+        if(!ordersOrdered.isEmpty){
+            OrderTriggerHelper.updateNetAmount(ordersWithAmount);
+        }
+
+        System.debug('## >>> Order before Update:END <<<');
+    }
+
+
+    /*
+    Handle "Order after Insert"
+    */
+    public override void afterInsert() {
+        System.debug(
+        '## >>> Order after Insert:START <<< run by ' + UserInfo.getName()
+        );
+        if(!ordersOrdered.isEmpty){
+            accountsToUpdate.addAll(OrderTriggerHelper.updateCA(ordersOrdered));
+        }
+
+        System.debug('## >>> Order after Insert:END <<<');
+    }
+
+    
+    /*
+    Handle "Order after Update"
+    */
+    public override void afterUpdate() {
+        System.debug(
+        '## >>> Order after Update:START <<< run by ' + UserInfo.getName()
+        );
+
+        if(!ordersOrdered.isEmpty){
+            accountsToUpdate.addAll(OrderTriggerHelper.updateCA(ordersOrdered));
+        }
+
+        System.debug('## >>> Order after Update:END <<<');
+    }
+
+
+    public override void endTrigger() {
+        System.debug('## >>> Order endTrigger:END <<<');
+        if(!accountsToUpdate.isEmpty()){
+            try {
+                update accountsToUpdate;
+            } catch (Exception e) {
+                System.debug('Exception endTrigger: '+ex.getMessage());
+                System.debug('Exception endTrigger: '+ex.getStackTraceString());
+            }
+        }
+    }
+
+}

@@ -7,24 +7,29 @@ global class Batch01AccountChiffreAffaire implements Database.Batchable<sObject>
    }
     
    global void execute(Database.BatchableContext info, List<Account> scope){      
-        // get accounts Ids in a Set
-        Set<Id> accountsIds = new Set<Id>();
-        for(Account account : scope){
-            accountsIds.add(account.Id);
-        }    
+       // get accounts Ids in a Set
+       Set<Id> accountsIds = new Set<Id>();
+       for(Account account : scope){
+           accountsIds.add(account.Id);
+       }    
        list<Order> listOrders =  [SELECT Id, TotalAmount, AccountId FROM Order WHERE AccountId IN :accountsIds];
        
-		for(Account a : scope){
-		    a.Chiffre_d_affaire__c = 0;
-            for(integer j=0; j < listOrders.size(); j++){
-               if(listOrders[j].AccountId == myAccount.Id){
-                   myAccount.Chiffre_d_affaire__c = myAccount.Chiffre_d_affaire__c + listOrders[j].TotalAmount;
-               }                   
-           }
+	   for(Account a : scope){
+		   a.Chiffre_d_affaire__c = 0;
+           for(integer j=0; j < listOrders.size(); j++){
+              if(listOrders[j].AccountId == myAccount.Id){
+                  myAccount.Chiffre_d_affaire__c = myAccount.Chiffre_d_affaire__c + listOrders[j].TotalAmount;
+              }                   
+          }
        }
        
-       update scope;
-   }    
+       try {
+        update scope;
+       } catch (Exception ex) {
+        System.debug('Exception Batch01AccountChiffreAffaire: '+ex.getMessage());
+        System.debug('Exception Batch01AccountChiffreAffaire: '+ex.getStackTraceString());      
+       }
+    }    
     
    global void finish(Database.BatchableContext info){     
        

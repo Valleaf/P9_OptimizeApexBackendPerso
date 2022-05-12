@@ -30,7 +30,7 @@ public without sharing class OrderTriggerHelper {
     }
 
     public static void updateNetAmount(List<Order> orders){
-        for(Order order : orders) {
+        for(Order order : orders) { 
             Decimal shipmentCost = order?.Shipping_Costs__c == null ? 0 : order.Shipping_Costs__c;
 	        order.NetAmount__c = order.TotalAmount - shipmentCost;  
         }

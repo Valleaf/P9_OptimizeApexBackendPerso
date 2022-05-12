@@ -37,10 +37,8 @@ public class OrderTriggerHandler extends TriggerHandler {
             //  Loop through and add to lists depending on conditions
             for (Order newOrder : newList){
                 Order oldOrder = (this.oldMap != null) ? oldMap.get(newOrder.Id) : null;
-                // Insert or Update ?
-                if (oldOrder == null){
-
-                }else{
+                // Update
+                if (oldOrder != null){
                     // If status changed to ordered, update CA
                     if(oldOrder.Status != newOrder.Status && newOrder.Status == ORDERED){
                         ordersOrdered.add(newOrder);
@@ -63,8 +61,10 @@ public class OrderTriggerHandler extends TriggerHandler {
         '## >>> Order before Update:START <<< run by ' + UserInfo.getName()
         );
 
-        if(!ordersWithAmount.isEmpty()){
-            OrderTriggerHelper.updateNetAmount(ordersWithAmount);
+        if(PAD.canTrigger('UpdateMontant')){
+            if(!ordersWithAmount.isEmpty()){
+                OrderTriggerHelper.updateNetAmount(ordersWithAmount);
+            }
         }
 
         System.debug('## >>> Order before Update:END <<<');

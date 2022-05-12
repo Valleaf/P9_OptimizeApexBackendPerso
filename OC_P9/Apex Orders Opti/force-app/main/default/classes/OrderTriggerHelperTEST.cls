@@ -5,73 +5,59 @@ private class OrderTriggerHelperTEST {
 
     @TestSetup
     static void makeData(){
-        Account acc1 = new Account(Name = 'Test Account 1');
-        insert acc1;
+        Account acc1 = DataFactory.createAccount('Test Account 1', true);
 
-        Product2 pd1 = new Product2(Name = 'Chemise Verte longue XYX', Family = 'Chemise');
-        Insert pd1;
- 
-        //Create the PricebookEntry
-        PricebookEntry pbe = new PricebookEntry(
-            Pricebook2Id = Test.getStandardPricebookId(),
-            Product2Id = pd1.Id,
-            UnitPrice = 1020,
-            IsActive = true
-        );
-        Insert pbe;
-
+        PricebookEntry pbe = DataFactory.initPriceBook('Chemise Verte longue XXL', 'TTII', 100);
+        insert pbe;
     }
 
 
     @isTest static void updateCATest() {
         Account acc1  = [SELECT Id, Name FROM Account WHERE Name = 'Test Account 1'];
-        Product2 pd1 = [SELECT Id FROM Product2 WHERE Name = 'Chemise Verte longue XYX']; 
-        User u = [SELECT Id FROM User WHERE Profile.Name = 'Commercial' LIMIT 1];
-        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Product2Id = :pd1.Id LIMIT 1];
-        System.runAs(u){
-            Order o1 = new Order(AccountId = acc1.Id);
-            Order o2 = new Order(AccountId = acc1.Id);
-            insert new List<Order>{o1, o2};
+        Product2 pd1 = [SELECT Id FROM Product2 WHERE Name = 'Chemise Verte longue XXL']; 
+        PricebookEntry pbe = [SELECT Id,Pricebook2Id FROM PricebookEntry WHERE Product2Id = :pd1.Id LIMIT 1];
+        
+        Order o1 = DataFactory.createOrder(acc1, pbe.Pricebook2Id, false);
+        insert o1;
 
-            OrderItem oi1 = new OrderItem (OrderId = o1.Id, PricebookEntryId = pbe.Id, Quantity=10, UnitPrice = 150);
-            OrderItem oi2 = new OrderItem (OrderId = o1.Id, PricebookEntryId = pbe.Id, Quantity=20, UnitPrice = 1000);
-            OrderItem oi3 = new OrderItem (OrderId = o2.Id, PricebookEntryId = pbe.Id, Quantity=20, UnitPrice = 100);
-            OrderItem oi4 = new OrderItem (OrderId = o2.Id, PricebookEntryId = pbe.Id, Quantity=20, UnitPrice = 1000);
-            insert new List<OrderItem> {oi1,oi2,oi3,oi4};  
+        OrderItem oi1 = DataFactory.createOrderItem(o1, pbe.Id, 100, false);
+        oi1.Quantity = 10;
+        insert oi1;
 
-            Test.startTest();
-            o1.Status = ORDERED;
-            Test.stopTest();
-            // Query the account
-            Account acc2 = [SELECT Id, Name FROM Account WHERE Id = :acc1.Id];
-            // Assert
-            Integer amount = 10*150 + 20*1000 + 20*100 + 20*1000;
-            System.assertEquals(amount, acc2.Chiffre_d_affaire__c,'Wrong amount');
-        }
+        Test.startTest();
+        o1.Status = ORDERED;
+        update o1;
+        Test.stopTest();
+        // Query the account
+        Account acc2 = [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id = :acc1.Id];
+        // Assert
+        System.assertEquals(1000, acc2.Chiffre_d_affaire__c,'Wrong amount');
     }
 
     @isTest
-    static void updateMontantTest() {
-        Product2 pd1 = [SELECT Id FROM Product2 WHERE Name = 'Chemise Verte longue XYX']; 
+    static void updateMontantTestWhenUpdatingShippingCosts() {
         Account acc1  = [SELECT Id, Name FROM Account WHERE Name = 'Test Account 1'];
-        User u = [SELECT Id FROM User WHERE Profile.Name = 'Commercial' LIMIT 1];
-        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Product2Id = :pd1.Id LIMIT 1];
+        Product2 pd1 = [SELECT Id FROM Product2 WHERE Name = 'Chemise Verte longue XXL']; 
+        PricebookEntry pbe = [SELECT Id,Pricebook2Id FROM PricebookEntry WHERE Product2Id = :pd1.Id LIMIT 1];
+        
+        Order o1 = DataFactory.createOrder(acc1, pbe.Pricebook2Id, false);
+        insert o1;
 
-        System.runAs(u){
-            Order o1 = new Order(AccountId = acc1.Id);
-            o1.Shipping_Costs__c = 100;
-            insert o1;
+        OrderItem oi1 = DataFactory.createOrderItem(o1, pbe.Id, 100, false);
+        OrderItem oi2 = DataFactory.createOrderItem(o1, pbe.Id, 20, false);
+        oi1.Quantity = 10;
+        oi2.Quantity = 1000;
+        insert new List<OrderItem>{oi1,oi2};
 
-            Test.startTest();
-            OrderItem oi1 = new OrderItem (OrderId = o1.Id, PricebookEntryId = pbe.Id, Quantity=10, UnitPrice = 150);
-            OrderItem oi2 = new OrderItem (OrderId = o1.Id, PricebookEntryId = pbe.Id, Quantity=20, UnitPrice = 1000);
-            insert new List<OrderItem> {oi1,oi2};  
-            Test.stopTest();
-            // Query the account
-            Order o1After = [SELECT Id, NetAmount__c FROM Order WHERE Id = :o1.Id];
-            // Assert
-            Integer amount = 10*150 + 20*1000 - 100;
-            System.assertEquals(amount, o1.NetAmount__c,'Wrong amount');
-        }
+        Test.startTest();
+        o1.Shipping_Costs__c = 100;
+        update o1;
+        Test.stopTest();
+
+        // Query the account
+        Order o1After = [SELECT Id, NetAmount__c FROM Order WHERE Id = :o1.Id];
+        // Assert
+        Integer amount = 10*100 + 20*1000 - 100;
+        System.assertEquals(amount, o1After.NetAmount__c,'Wrong amount');
     }
 }

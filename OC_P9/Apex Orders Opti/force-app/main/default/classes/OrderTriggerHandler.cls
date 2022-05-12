@@ -39,17 +39,14 @@ public class OrderTriggerHandler extends TriggerHandler {
                 Order oldOrder = (this.oldMap != null) ? oldMap.get(newOrder.Id) : null;
                 // Insert or Update ?
                 if (oldOrder == null){
-                    // If inserting an order with an amount , calculate Net Amount
-                    if(newOrder.TotalAmount != null){
-                        ordersWithAmount.add(newOrder);
-                    }
+
                 }else{
                     // If status changed to ordered, update CA
                     if(oldOrder.Status != newOrder.Status && newOrder.Status == ORDERED){
                         ordersOrdered.add(newOrder);
                     }
                     // If amount changed, update netAmount
-                    if(oldOrder.TotalAmount != newOrder.TotalAmount){
+                    if(oldOrder.TotalAmount != newOrder.TotalAmount || oldOrder.Shipping_Costs__c != newOrder.Shipping_Costs__c){
                         ordersWithAmount.add(newOrder);
                     }
                 }
@@ -65,7 +62,7 @@ public class OrderTriggerHandler extends TriggerHandler {
         System.debug(
         '## >>> Order before Insert:START <<< run by ' + UserInfo.getName()
         );
-        if(!ordersOrdered.isEmpty()){
+        if(!ordersWithAmount.isEmpty()){
             OrderTriggerHelper.updateNetAmount(ordersWithAmount);
         }
 
@@ -81,7 +78,7 @@ public class OrderTriggerHandler extends TriggerHandler {
         '## >>> Order before Update:START <<< run by ' + UserInfo.getName()
         );
 
-        if(!ordersOrdered.isEmpty()){
+        if(!ordersWithAmount.isEmpty()){
             OrderTriggerHelper.updateNetAmount(ordersWithAmount);
         }
 

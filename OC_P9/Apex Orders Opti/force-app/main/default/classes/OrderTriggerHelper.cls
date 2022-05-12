@@ -18,7 +18,11 @@ public without sharing class OrderTriggerHelper {
     for(Order order : orders) {
         Account acc = accs.get(order.AccountId);
         if(acc != null) {
-            acc.Chiffre_d_affaire__c += order.TotalAmount;
+            if(acc.Chiffre_d_affaire__c == null) {
+                acc.Chiffre_d_affaire__c = order.TotalAmount;
+            } else {
+                acc.Chiffre_d_affaire__c += order.TotalAmount;
+            }    
         }
     }
     // return accounts now
@@ -27,7 +31,8 @@ public without sharing class OrderTriggerHelper {
 
     public static void updateNetAmount(List<Order> orders){
         for(Order order : orders) {
-	        order.NetAmount__c = order.TotalAmount - order.ShipmentCost__c;  
+            Decimal shipmentCost = order?.ShipmentCost__c == null ? 0 : order.ShipmentCost__c;
+	        order.NetAmount__c = order.TotalAmount - shipmentCost;  
         }
     }
 }

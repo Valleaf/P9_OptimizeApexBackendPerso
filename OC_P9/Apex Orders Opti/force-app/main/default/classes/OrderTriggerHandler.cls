@@ -39,10 +39,6 @@ public class OrderTriggerHandler extends TriggerHandler {
                 Order oldOrder = (this.oldMap != null) ? oldMap.get(newOrder.Id) : null;
                 // Insert or Update ?
                 if (oldOrder == null){
-                    // If inserting an Ordered order, add to list
-                    if(newOrder.Status == ORDERED){
-                        ordersOrdered.add(newOrder);
-                    }
                     // If inserting an order with an amount , calculate Net Amount
                     if(newOrder.TotalAmount != null){
                         ordersWithAmount.add(newOrder);
@@ -92,21 +88,6 @@ public class OrderTriggerHandler extends TriggerHandler {
         System.debug('## >>> Order before Update:END <<<');
     }
 
-
-    /*
-    Handle "Order after Insert"
-    */
-    public override void afterInsert() {
-        System.debug(
-        '## >>> Order after Insert:START <<< run by ' + UserInfo.getName()
-        );
-        if(!ordersOrdered.isEmpty()){
-            accountsToUpdate.addAll(OrderTriggerHelper.updateCA(ordersOrdered));
-        }
-
-        System.debug('## >>> Order after Insert:END <<<');
-    }
-
     
     /*
     Handle "Order after Update"
@@ -116,8 +97,10 @@ public class OrderTriggerHandler extends TriggerHandler {
         '## >>> Order after Update:START <<< run by ' + UserInfo.getName()
         );
 
-        if(!ordersOrdered.isEmpty()){
-            accountsToUpdate.addAll(OrderTriggerHelper.updateCA(ordersOrdered));
+        if(PAD.canTrigger('UpdateCA')){
+            if(!ordersOrdered.isEmpty()){
+                accountsToUpdate.addAll(OrderTriggerHelper.updateCA(ordersOrdered));
+            }
         }
 
         System.debug('## >>> Order after Update:END <<<');

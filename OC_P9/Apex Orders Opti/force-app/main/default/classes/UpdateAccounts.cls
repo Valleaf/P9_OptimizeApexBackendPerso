@@ -1,4 +1,8 @@
 global class UpdateAccounts implements Database.Batchable<sObject>{
+
+    public static void run(){
+        Database.executeBatch(new UpdateAccounts());
+    }
     
     global Database.QueryLocator start(Database.BatchableContext info){ 
         //Requeter seulement les comptes qui ont au moins une commande avec le Status 'Ordered'

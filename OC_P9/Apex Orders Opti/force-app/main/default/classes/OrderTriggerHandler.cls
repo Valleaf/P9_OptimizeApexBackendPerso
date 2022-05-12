@@ -54,21 +54,6 @@ public class OrderTriggerHandler extends TriggerHandler {
         }
     }
 
-
-    /*
-    Handle "Order before Insert"
-    */
-    public override void beforeInsert() {
-        System.debug(
-        '## >>> Order before Insert:START <<< run by ' + UserInfo.getName()
-        );
-        if(!ordersWithAmount.isEmpty()){
-            OrderTriggerHelper.updateNetAmount(ordersWithAmount);
-        }
-
-        System.debug('## >>> Order before Insert:END <<<');
-    }
-
     
     /*
     Handle "Order before Update"

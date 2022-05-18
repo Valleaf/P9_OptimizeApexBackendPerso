@@ -36,7 +36,7 @@ global class UpdateAccounts implements Database.Batchable<sObject>{
                 aTemp.Chiffre_d_affaire__c += order.TotalAmount;
             }
         }
-        
+        // TODO: USE EXISTING METHOD
         try {
          update scope;
         } catch (Exception ex) {

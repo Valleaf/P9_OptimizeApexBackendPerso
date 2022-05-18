@@ -17,14 +17,24 @@ global class UpdateAccounts implements Database.Batchable<sObject>{
             accountsIds.add(account.Id);
         }    
         list<Order> listOrders =  [SELECT Id, TotalAmount, AccountId FROM Order WHERE AccountId IN :accountsIds];
-        
-        for(Account a : scope){
-            a.Chiffre_d_affaire__c = 0;
-            for(integer j=0; j < listOrders.size(); j++){
-               if(listOrders[j].AccountId == a.Id){
-                   a.Chiffre_d_affaire__c += listOrders[j].TotalAmount;
-               }                   
-           }
+        // Map the orders to the accounts via a list
+        Map<Id, List<Order>> ordersByAccount = new Map<Id, List<Order>>();
+        for(Order order : listOrders){
+            if(ordersByAccount.get(order.AccountId) != null){
+                ordersByAccount.get(order.AccountId).add(order);
+            }else{
+                List<Order> list = new List<Order>();
+                list.add(order);
+                ordersByAccount.put(order.AccountId, list);
+            }
+        }
+        // Calculate the total amount for each account
+        for(Id accountId : ordersByAccount.keyset()){
+            Account aTemp = new Account(Id = accountId);
+            aTemp.Chiffre_d_affaire__c = 0;
+            for(Order order : ordersByAccount.get(accountId)){
+                aTemp.Chiffre_d_affaire__c += order.TotalAmount;
+            }
         }
         
         try {

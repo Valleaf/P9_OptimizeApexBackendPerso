@@ -1,6 +1,6 @@
 @isTest
-private with sharing class updateAccountsTest{
-    public static final String ORDERED = 'Ordered';
+private with sharing class UpdateAccountsTest{
+    public static final String ACTIVATED = 'Activated';
     @isTest
     private static void updateAllAccountsTEST(){
 
@@ -29,13 +29,13 @@ private with sharing class updateAccountsTest{
         OrderItem oi3b = DataFactory.createOrderItem(o3b, pbe.Id, 300, false);
         insert new List<OrderItem>{ oi1, oi2, oi3, oi1b, oi2b, oi3b };
 
-        // Change status of orders to "ordered"
-        o1.status = ORDERED;
-        o1b.Status = ORDERED;
-        o2.status = ORDERED;
-        o2b.Status = ORDERED;
-        o3.status = ORDERED;
-        o3b.Status = ORDERED;
+        // Change status of orders to "activated"
+        o1.status = ACTIVATED;
+        o1b.Status = ACTIVATED;
+        o2.status = ACTIVATED;
+        o2b.Status = ACTIVATED;
+        o3.status = ACTIVATED;
+        o3b.Status = ACTIVATED;
         update new List<Order>{ o1, o2, o3, o1b, o2b, o3b };
         // Update all accounts
         Test.startTest();

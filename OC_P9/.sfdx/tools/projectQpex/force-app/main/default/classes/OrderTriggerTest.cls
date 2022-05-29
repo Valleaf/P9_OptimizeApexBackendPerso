@@ -1,7 +1,7 @@
 @isTest
 private class OrderTriggerTest {
 
-    private static final String ORDERED = 'Ordered';
+    private static final String ACTIVATED = 'Activated';
 
     @TestSetup
     static void makeData(){
@@ -25,7 +25,7 @@ private class OrderTriggerTest {
         insert oi1;
 
         Test.startTest();
-        o1.Status = ORDERED;
+        o1.Status = ACTIVATED;
         update o1;
         Test.stopTest();
         // Query the account

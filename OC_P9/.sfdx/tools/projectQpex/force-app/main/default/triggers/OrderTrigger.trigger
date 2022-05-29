@@ -1,9 +1,9 @@
 trigger OrderTrigger on Order (before update,after update) {
 	
-    if(Trigger.OperationType == BEFORE_UPDATE) {
+    if(Trigger.isBefore && Trigger.isUpdate) {
         OrderTriggerHandler.beforeUpdate(Trigger.New);
     }
-    if(Trigger.OperationType == AFTER_UPDATE){
+    if(Trigger.isAfter && Trigger.isUpdate){
         OrderTriggerHandler.afterUpdate(Trigger.New);
     }
 }

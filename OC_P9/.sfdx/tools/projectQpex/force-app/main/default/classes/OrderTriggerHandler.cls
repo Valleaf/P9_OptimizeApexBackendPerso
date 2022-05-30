@@ -9,7 +9,7 @@ public class OrderTriggerHandler {
     public static void afterUpdate(List<Order> newOrders){
         Set<Id> setAccountIds = new set<Id>();
         for(Order o : newOrders){
-            if(o.status == 'ACTIVATED'){
+            if(o.status == 'Activated'){
                 setAccountIds.add(o.AccountId);
             }
         }
